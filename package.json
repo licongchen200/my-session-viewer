@@ -1,0 +1,34 @@
+{
+  "name": "my-session-viewer-lib",
+  "version": "1.0.0",
+  "description": "A JavaScript library to capture browser screenshots.",
+  "main": "mySessionViewer.js", 
+  "type": "module", 
+  "files": [ 
+    "mySessionViewer.js"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "screenshot",
+    "capture",
+    "browser",
+    "javascript",
+    "library"
+  ],
+  "author": "Licong Chen licong.ch@gmail.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yourusername/my-screenshot-lib/issues"
+  },
+  "homepage": "https://github.com/yourusername/my-screenshot-lib#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/my-screenshot-lib.git"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+  }
+}
