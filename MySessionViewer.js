@@ -1,37 +1,39 @@
 /**
- * Screenshot Capture Library (Non-Extension)
+ * Screenshot Capture Library (Non-Extension) - Fully Embedded & Auto-Init
  */
-import html2canvas from 'html2canvas';
-
 class MySessionViewer {
     constructor() {
         this.dialog = null;
         this.screenshotDataURL = null;
-        this.commentInput = null;
+        this.commentInput = null; // Add a property to store the comment input element
 
         this.options = {
             dialogTitle: 'Report an issue with the Screenshot',
             dialogWidth: '800px',
-            dialogHeight: '650px',
+            dialogHeight: '650px', // Increased height
             screenshotMaxWidth: '100%',
             screenshotMaxHeight: '100%',
             closeButtonText: 'Close',
             submitButtonText: 'Submit',
             backgroundColor: '#f0f0f0',
+            preSignedUrl: 'https://x.cable.comcast.com/',
             apiUrl: 'https://192.168.0.102/api/image',
-            autoInitialize: false, // Set to false
+            autoInitialize: true,
             jpegQuality: 0.9,
             hotkeyControl: true,
             hotkeyKey: 'h',
             escapeKeyDismiss: true,
-            commentLabel: 'Comment:'
+            commentLabel: 'Comment:' // Add label for the comment input
         };
 
         this.handleKeyPress = this.handleKeyPress.bind(this);
         this.handleEscapeKey = this.handleEscapeKey.bind(this);
-        this.html2canvasScriptLoaded = true; //Always true, since it imports html2canvas
-        // this.loadHtml2Canvas();
+        this.html2canvasScriptLoaded = false;
+        this.loadHtml2Canvas();
 
+        if (this.options.autoInitialize) {
+            this.autoInit();
+        }
     }
 
     init(options = {}) {
@@ -42,10 +44,6 @@ class MySessionViewer {
             document.addEventListener('keydown', this.handleEscapeKey);
         } else {
             document.removeEventListener('keydown', this.handleEscapeKey);
-        }
-
-        if (this.options.autoInitialize) {
-            this.autoInit();
         }
     }
 
@@ -72,6 +70,25 @@ class MySessionViewer {
         }
     }
 
+    loadHtml2Canvas() {
+        if (this.html2canvasScriptLoaded) return;
+
+        const script = document.createElement('script');
+        script.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
+
+        script.onload = () => {
+            console.log('html2canvas loaded successfully.');
+            this.html2canvasScriptLoaded = true;
+        };
+
+        script.onerror = () => {
+            console.error('Failed to load html2canvas.');
+            // alert('Failed to load html2canvas.  Screenshot functionality will not work.');
+        };
+
+        document.head.appendChild(script);
+    }
+
     captureAndShow() {
         if (!this.html2canvasScriptLoaded) {
             console.error('html2canvas is still loading. Please try again in a moment.');
@@ -83,6 +100,7 @@ class MySessionViewer {
             this.showDialog(this.screenshotDataURL);
         }).catch(error => {
             console.error('Error capturing screenshot:', error);
+            // alert('Failed to capture screenshot. See console for details. html2canvas might have CORS issues.');
         });
     }
 
@@ -213,6 +231,24 @@ class MySessionViewer {
         }
     }
 
+
+    async uploadUrl(keyName) {
+        const response = await fetch(this.options.preSignedUrl + 'api/uploadurl/' + keyName, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = response.json();
+
+        if (response.ok) {
+            return data;
+        } else {
+            return None;
+        }
+    }
+
     /**
      * Handles the Escape key press event to dismiss the dialog.
      * @param {KeyboardEvent} event - The keyboard event object.
@@ -241,18 +277,27 @@ class MySessionViewer {
             // Convert data URL to Blob
             const blob = await fetch(this.screenshotDataURL).then(res => res.blob());
 
+            const urlResponse = await this.uploadUrl(uuid + '.jpg');
+
+            if (!myUrl) {
+                console.error('Error on generate uploading url');
+            }
+
             // Create FormData object
             const formData = new FormData();
-            formData.append('image', blob, `${uuid}.jpg`); // 'image' is the field name, using uuid as filename
+            formData.append('file', blob, `${uuid}.jpg`); // 'image' is the field name, using uuid as filename
+            for (key in urlResponse) {
+                formData.append(key, urlResponse.fields[key]);
+            }
 
-            // Get the comment from the input
-            const comment = this.commentInput ? this.commentInput.value : '';
-            formData.append('comment', comment);  // Append the comment to the FormData
-            formData.append('uuid', uuid);  // Append the comment to the FormData
-            formData.append('currentPage', window.location.href);  // Append the comment to the FormData
-            formData.append('sessionId', window.sessionId);
+            // // Get the comment from the input
+            // const comment = this.commentInput ? this.commentInput.value : '';
+            // formData.append('comment', comment);  // Append the comment to the FormData
+            // formData.append('uuid', uuid);  // Append the comment to the FormData
+            // formData.append('currentPage', window.location.href);  // Append the comment to the FormData
+            // formData.append('sessionId', window.sessionId);
 
-            const response = await fetch(this.options.apiUrl, {
+            const response = await fetch(urlResponse.url, {
                 method: 'POST',
                 body: formData // Send the FormData object
             });
@@ -263,7 +308,6 @@ class MySessionViewer {
 
             const data = await response.text(); // Expecting text response, not JSON.  Adjust if your API returns JSON.
             console.log('Screenshot submitted successfully:', data);
-            // alert('Screenshot submitted successfully!');
             this.closeDialog();
 
         } catch (error) {
@@ -287,4 +331,15 @@ class MySessionViewer {
     }
 }
 
-export default MySessionViewer;
+  
+  // Auto-initialize the library when the script is loaded
+  (function () {
+    window.mySessionViewer = new MySessionViewer();
+    window.mySessionViewer.init({
+        hotkeyControl: true,
+        preSignedUrl: 'https://x.cable.comcast.com/',
+        hotkeyKey: 's',
+        apiUrl: 'https://www.test.com/api/image'
+    });    
+  }());
+  

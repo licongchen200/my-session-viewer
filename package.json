@@ -1,6 +1,6 @@
 {
   "name": "my-session-viewer-lib",
-  "version": "1.0.3",
+  "version": "1.0.6",
   "description": "A JavaScript library to capture browser screenshots and report issues.",
   "main": "MySessionViewer.js",
   "type": "module",
